@@ -18,5 +18,6 @@ My initial idea was to simply pass each company name to Gemini and ask for the f
 - For example, on https://www.casium.com/ the founder information is inside a YouTube video. In the future, I want to make sure information in any format (video, images, etc.) can be read by the AI to identify the founders.
 - Add a frontend to the code. Right now everything prints in the terminal, so it would be nice to have a simple website where you can type a company name and get the founders.
 - Train my own model. Relying on Gemini is great, but for deployment it would be better to have a model tailored to this specific job (or fine-tuned for it).
+- Remove hard coded API key, and store onto somewhere secure such as GoogleCloud
    
 
