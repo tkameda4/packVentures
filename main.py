@@ -5,11 +5,11 @@ Edited: 10-03-2025
 Description: Finds the name of the founders given a list of companies and its url.
 '''
 import google.generativeai as genai
-import requests
+import requests, json, os
 from bs4 import BeautifulSoup
 
 # API key for Gemini AI
-API_KEY = "AIzaSyDPnjEITD457EV37oXwytIfjTy7jXgaVKQ"
+API_KEY = "AIzaSyCxsQoudVL365liQpWVXGBzN-66kd-wgNk"
 genai.configure(api_key=API_KEY)
 
 # Finds the company name and url from given file
@@ -56,6 +56,18 @@ def fetch_text(url):
         print(f"Error fetching {url}: {e}")
         return ""
 
+# for formatting AI output
+def parseLine(company_name, line):
+    line = line.strip()
+    prefix = f"{company_name}:"
+    if line.startswith(prefix):
+        tail = line[len(prefix):].strip()
+    else:
+        tail = line
+    if tail == "[]":
+        return []
+    return [n.strip() for n in tail.split(",") if n.strip()]
+
 # Looks for the name of founders given a company url
 # If the url does not contain any information about the founders, return []
 def getFounders(company):
@@ -82,12 +94,17 @@ def getFounders(company):
     {combined_text[:6000]}
 
     Format the answer exactly like this:
-    {company['name']}: Founder1, Founder2, Founder3
+    ["Name 1","Name 2"]
     """
     
-    resp = model.generate_content(prompt)
-    # return the generated answer
-    return resp.text.strip()
+    response = model.generate_content(prompt)
+
+    # change to correct json format
+    try:
+        data = json.loads((response.text or "").strip())
+        return [n.strip() for n in data if isinstance(n, str) and n.strip()]
+    except Exception:
+        return []
 
 if __name__ == "__main__":
     companies = loadCompanies("companies.txt")
@@ -100,3 +117,21 @@ if __name__ == "__main__":
     # print the result
     for company, founders in results.items():
         print(f"{founders}")
+
+    # load results to founders.json
+    existing = {}
+    if os.path.exists("founders.json"):
+        try:
+            with open("founders.json", "r", encoding="utf-8") as f:
+                existing = json.load(f)
+            if not isinstance(existing, dict):
+                existing = {}
+        except Exception:
+            existing = {}
+
+    # merge new results
+    existing.update(results)
+
+    # write back (creates the file if it doesn't exist)
+    with open("founders.json", "w", encoding="utf-8") as f:
+        json.dump(existing, f, ensure_ascii=False, indent=2)
